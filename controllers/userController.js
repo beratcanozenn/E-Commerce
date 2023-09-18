@@ -1,7 +1,7 @@
 const { generateToken } = require("../config/jwtToken");
 const User = require("../models/User");
 const asyncHandler = require("express-async-handler");
-
+const { validateMongoDbIb } = require("../utils/validateMongoDbId");
 const createUser = asyncHandler(async (req, res) => {
   const email = req.body.email;
   const findUser = await User.findOne({ email });
@@ -47,7 +47,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
 
 const getUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-
+  validateMongoDbIb(id);
   try {
     const user = await User.findById(id);
     res.json(user);
@@ -58,11 +58,11 @@ const getUser = asyncHandler(async (req, res) => {
 
 //Update a User
 const updateUser = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-
+  const { _id } = req.user;
+  validateMongoDbIb(_id);
   try {
     const updateUser = await User.findByIdAndUpdate(
-      id,
+      _id,
       {
         firstname: req?.body?.firstname,
         lastname: req?.body?.lastname,
@@ -81,10 +81,48 @@ const updateUser = asyncHandler(async (req, res) => {
 
 const deleteUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-
+  validateMongoDbIb(id);
   try {
     const user = await User.findByIdAndDelete(id);
     res.json(user);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const blockUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  validateMongoDbIb(id);
+  try {
+    const blockUser = await User.findByIdAndUpdate(
+      id,
+      {
+        isBlocked: true,
+      },
+      { new: true }
+    );
+    res.json({
+      msg: "User blocked",
+    });
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const unblockUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  validateMongoDbIb(id);
+  try {
+    const blockUser = await User.findByIdAndUpdate(
+      id,
+      {
+        isBlocked: false,
+      },
+      { new: true }
+    );
+    res.json({
+      msg: "User unblocked",
+    });
   } catch (error) {
     throw new Error(error);
   }
@@ -96,5 +134,7 @@ module.exports = {
   getAllUsers,
   getUser,
   deleteUser,
-  updateUser
+  updateUser,
+  blockUser,
+  unblockUser,
 };
